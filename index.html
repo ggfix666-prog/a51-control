@@ -2,118 +2,480 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>A51 Control</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body {
-    font-family: system-ui, -apple-system, sans-serif;
-    background: var(--tg-theme-bg-color, #17212b);
-    color: var(--tg-theme-text-color, #ffffff);
-    padding: 12px;
+  :root {
+    --bg: var(--tg-theme-bg-color, #0f1720);
+    --card: var(--tg-theme-secondary-bg-color, #1c2530);
+    --text: var(--tg-theme-text-color, #ffffff);
+    --hint: var(--tg-theme-hint-color, #7d8b99);
+    --accent: var(--tg-theme-button-color, #2ea6ff);
+    --accent-text: var(--tg-theme-button-text-color, #ffffff);
+  }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif;
     min-height: 100vh;
+    overflow-x: hidden;
+    padding-bottom: 80px;
   }
-  h2 { font-size: 13px; margin: 16px 0 8px; opacity: 0.6; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-  button {
-    background: var(--tg-theme-button-color, #5288c1);
-    color: var(--tg-theme-button-text-color, #fff);
+
+  /* HEADER */
+  .header {
+    position: sticky; top: 0; z-index: 10;
+    background: linear-gradient(180deg, var(--bg) 70%, transparent);
+    padding: 14px 16px 10px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .title { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+  .title span { color: var(--accent); }
+  .status {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--hint);
+  }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #2ecc71;
+    box-shadow: 0 0 8px #2ecc71;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex; gap: 6px;
+    padding: 0 16px 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: 0 0 auto;
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: var(--card);
+    color: var(--hint);
+    font-size: 13px; font-weight: 600;
     border: none;
-    border-radius: 10px;
-    padding: 14px 8px;
-    font-size: 13px;
-    font-weight: 500;
     cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    transition: transform 0.1s, opacity 0.1s;
+    transition: all 0.2s;
   }
-  button:active { transform: scale(0.94); opacity: 0.85; }
-  button.danger { background: #e74c3c; }
-  button.success { background: #27ae60; }
-  button.warn { background: #e67e22; }
-  .icon { font-size: 22px; }
-  input {
+  .tab.active {
+    background: var(--accent);
+    color: var(--accent-text);
+    transform: scale(1.02);
+  }
+
+  /* CONTENT */
+  .content { padding: 0 16px; }
+  .page { display: none; animation: fadeIn 0.25s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* BUTTONS */
+  .grid { display: grid; gap: 10px; }
+  .g2 { grid-template-columns: 1fr 1fr; }
+  .g3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  button.action {
+    background: var(--card);
+    color: var(--text);
+    border: none;
+    border-radius: 16px;
+    padding: 14px 10px;
+    font-size: 13px; font-weight: 600;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.2s;
+    min-height: 78px;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  button.action:active {
+    transform: scale(0.95);
+    background: var(--accent);
+  }
+  button.action.danger { color: #ff6b6b; }
+  button.action.danger:active { background: #ff6b6b; color: #fff; }
+  button.action.success { color: #2ecc71; }
+  button.action.success:active { background: #2ecc71; color: #fff; }
+  button.action.warn { color: #f39c12; }
+  button.action.warn:active { background: #f39c12; color: #fff; }
+  .icon { font-size: 24px; line-height: 1; }
+  .label { font-size: 12px; }
+
+  /* Highlighted button */
+  button.action.primary {
+    background: linear-gradient(135deg, var(--accent), #1e88e5);
+    color: #fff;
+    grid-column: span 2;
+  }
+
+  /* SLIDER */
+  .slider-block {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+  .slider-header {
+    display: flex; justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: var(--hint);
+  }
+  .slider-header b { color: var(--text); font-size: 15px; }
+  input[type=range] {
     width: 100%;
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid var(--tg-theme-hint-color, #3b4a5a);
-    background: var(--tg-theme-secondary-bg-color, #232e3c);
-    color: var(--tg-theme-text-color, #fff);
-    font-size: 15px;
-    margin-bottom: 8px;
+    -webkit-appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.1);
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+
+  /* Custom input */
+  .input-block {
+    display: flex; gap: 8px;
+    margin-bottom: 10px;
+  }
+  .input-block input {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: var(--card);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+  }
+  .input-block button {
+    padding: 12px 20px;
+    border-radius: 12px;
+    background: var(--accent);
+    color: var(--accent-text);
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .input-block button:active { opacity: 0.8; }
+
+  /* SECTION LABEL */
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--hint);
+    margin: 16px 0 10px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 90px; left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(10px);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 1000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  /* PLAY MODAL */
+  .modal {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    display: none;
+    align-items: flex-end;
+  }
+  .modal.show { display: flex; animation: fadeIn 0.2s; }
+  .modal-content {
+    width: 100%;
+    max-height: 70vh;
+    background: var(--bg);
+    border-radius: 24px 24px 0 0;
+    padding: 20px 16px;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .modal-handle {
+    width: 40px; height: 4px;
+    background: var(--hint);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+    opacity: 0.5;
+  }
+  .modal h3 {
+    font-size: 16px; margin-bottom: 14px;
+    font-weight: 700;
+  }
+  .track-item {
+    padding: 12px 14px;
+    background: var(--card);
+    border-radius: 12px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px;
+    transition: background 0.15s;
+  }
+  .track-item:active { background: var(--accent); }
+  .track-item .num {
+    color: var(--hint);
+    font-size: 12px;
+    min-width: 24px;
   }
 </style>
 </head>
 <body>
 
-<h2>🎵 Музыка</h2>
-<div class="grid">
-  <button onclick="send('/play track1.mp3')"><span class="icon">▶️</span>Play</button>
-  <button class="danger" onclick="send('/stop')"><span class="icon">⏹</span>Stop</button>
-  <button onclick="send('/list')"><span class="icon">📋</span>Список</button>
-  <button onclick="askVolume()"><span class="icon">🔊</span>Громкость</button>
+<!-- HEADER -->
+<div class="header">
+  <div class="title">A51 <span>Control</span></div>
+  <div class="status"><span class="dot"></span>online</div>
 </div>
 
-<h2>🤖 Система</h2>
-<div class="grid3">
-  <button onclick="send('/torch on')"><span class="icon">🔦</span>Вкл</button>
-  <button onclick="send('/torch off')"><span class="icon">🌑</span>Выкл</button>
-  <button onclick="send('/vibrate 3')"><span class="icon">📳</span>Вибро</button>
-  <button onclick="send('/photo')"><span class="icon">📸</span>Фото</button>
-  <button onclick="send('/selfie')"><span class="icon">🤳</span>Селфи</button>
-  <button onclick="send('/battery')"><span class="icon">🔋</span>Батарея</button>
-  <button onclick="send('/location')"><span class="icon">📍</span>GPS</button>
-  <button onclick="send('/device')"><span class="icon">📱</span>Инфо</button>
-  <button onclick="send('/clip')"><span class="icon">📋</span>Буфер</button>
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('music', this)">🎵 Музыка</button>
+  <button class="tab" onclick="switchTab('system', this)">⚙️ Система</button>
+  <button class="tab" onclick="switchTab('spy', this)">🕵️ Шпион</button>
+  <button class="tab" onclick="switchTab('prank', this)">🎭 Пранк</button>
 </div>
 
-<h2>🕵️ Шпион</h2>
-<div class="grid3">
-  <button onclick="send('/sms')"><span class="icon">📩</span>SMS</button>
-  <button onclick="send('/calls')"><span class="icon">📞</span>Звонки</button>
-  <button onclick="send('/contacts')"><span class="icon">👥</span>Контакт</button>
-  <button onclick="send('/record 10')"><span class="icon">🎤</span>Запись</button>
-  <button onclick="send('/wifi')"><span class="icon">📶</span>WiFi</button>
-  <button onclick="send('/wifiscan')"><span class="icon">📡</span>Скан</button>
+<div class="content">
+
+  <!-- MUSIC -->
+  <div class="page active" id="music">
+    <button class="action primary" onclick="send('/playlist')">
+      <span class="icon">▶️</span>
+      <span class="label">Открыть плейлист</span>
+    </button>
+    <div class="grid g2" style="margin-top:10px;">
+      <button class="action" onclick="send('/playall')">
+        <span class="icon">📻</span><span class="label">Играть всё</span>
+      </button>
+      <button class="action" onclick="send('/random')">
+        <span class="icon">🎲</span><span class="label">Случайно</span>
+      </button>
+      <button class="action" onclick="send('/list')">
+        <span class="icon">📋</span><span class="label">Список</span>
+      </button>
+      <button class="action danger" onclick="send('/stop')">
+        <span class="icon">⏹</span><span class="label">Стоп</span>
+      </button>
+    </div>
+
+    <div class="section-title">Громкость</div>
+    <div class="slider-block">
+      <div class="slider-header">
+        <span>🔊 Уровень</span>
+        <b id="volValue">50%</b>
+      </div>
+      <input type="range" min="0" max="100" value="50" id="volSlider"
+             oninput="document.getElementById('volValue').textContent = this.value + '%'"
+             onchange="send('/volume ' + this.value)">
+    </div>
+  </div>
+
+  <!-- SYSTEM -->
+  <div class="page" id="system">
+    <div class="section-title">Свет и связь</div>
+    <div class="grid g3">
+      <button class="action" onclick="send('/torch on')"><span class="icon">🔦</span><span class="label">Фонарь</span></button>
+      <button class="action" onclick="send('/torch off')"><span class="icon">🌑</span><span class="label">Выкл</span></button>
+      <button class="action" onclick="send('/vibrate 3')"><span class="icon">📳</span><span class="label">Вибро</span></button>
+    </div>
+
+    <div class="section-title">Камера и локация</div>
+    <div class="grid g3">
+      <button class="action" onclick="send('/photo')"><span class="icon">📸</span><span class="label">Фото</span></button>
+      <button class="action" onclick="send('/selfie')"><span class="icon">🤳</span><span class="label">Селфи</span></button>
+      <button class="action" onclick="send('/location')"><span class="icon">📍</span><span class="label">GPS</span></button>
+    </div>
+
+    <div class="section-title">Инфо и управление</div>
+    <div class="grid g3">
+      <button class="action" onclick="send('/battery')"><span class="icon">🔋</span><span class="label">Батарея</span></button>
+      <button class="action" onclick="send('/device')"><span class="icon">📱</span><span class="label">Инфо</span></button>
+      <button class="action" onclick="send('/clip')"><span class="icon">📋</span><span class="label">Буфер</span></button>
+      <button class="action" onclick="send('/brightness 100')"><span class="icon">💡</span><span class="label">Свет+</span></button>
+      <button class="action" onclick="send('/brightness 10')"><span class="icon">🌙</span><span class="label">Свет−</span></button>
+      <button class="action" onclick="send('/silent')"><span class="icon">🔇</span><span class="label">Без звука</span></button>
+    </div>
+
+    <div class="section-title">Питание</div>
+    <div class="grid g2">
+      <button class="action danger" onclick="send('/lock')"><span class="icon">🔒</span><span class="label">Заблокировать</span></button>
+      <button class="action danger" onclick="confirmSend('/off', 'Точно выключить A51?')"><span class="icon">⏻</span><span class="label">Выключить</span></button>
+    </div>
+
+    <div class="section-title">Своя команда</div>
+    <div class="input-block">
+      <input id="customCmd" placeholder="/say Привет" />
+      <button onclick="sendCustom()">📤</button>
+    </div>
+
+    <div class="section-title">Голос</div>
+    <div class="grid g3">
+      <button class="action" onclick="send('/say Привет!')"><span class="icon">👋</span><span class="label">Привет</span></button>
+      <button class="action" onclick="send('/say Я вижу тебя')"><span class="icon">👁</span><span class="label">Вижу</span></button>
+      <button class="action" onclick="send('/say Помогите!')"><span class="icon">🆘</span><span class="label">SOS</span></button>
+    </div>
+  </div>
+
+  <!-- SPY -->
+  <div class="page" id="spy">
+    <div class="section-title">Данные</div>
+    <div class="grid g3">
+      <button class="action" onclick="send('/sms')"><span class="icon">📩</span><span class="label">SMS</span></button>
+      <button class="action" onclick="send('/calls')"><span class="icon">📞</span><span class="label">Звонки</span></button>
+      <button class="action" onclick="send('/contacts')"><span class="icon">👥</span><span class="label">Контакты</span></button>
+    </div>
+
+    <div class="section-title">Запись и сеть</div>
+    <div class="grid g3">
+      <button class="action" onclick="send('/record 10')"><span class="icon">🎤</span><span class="label">Запись 10с</span></button>
+      <button class="action" onclick="send('/record 30')"><span class="icon">🎙</span><span class="label">Запись 30с</span></button>
+      <button class="action" onclick="send('/wifi')"><span class="icon">📶</span><span class="label">WiFi</span></button>
+      <button class="action" onclick="send('/wifiscan')"><span class="icon">📡</span><span class="label">Скан сетей</span></button>
+    </div>
+
+    <div class="section-title">Показать на экране</div>
+    <div class="input-block">
+      <input id="toastText" placeholder="Текст уведомления" />
+      <button onclick="send('/toast ' + document.getElementById('toastText').value)">🎈</button>
+    </div>
+    <div class="input-block">
+      <input id="notifyText" placeholder="Текст уведомления" />
+      <button onclick="send('/notify ' + document.getElementById('notifyText').value)">🔔</button>
+    </div>
+
+    <div class="section-title">Прочее</div>
+    <div class="grid g2">
+      <button class="action" onclick="send('/open https://youtube.com')"><span class="icon">▶️</span><span class="label">YouTube</span></button>
+      <button class="action" onclick="send('/open https://google.com')"><span class="icon">🌐</span><span class="label">Google</span></button>
+    </div>
+  </div>
+
+  <!-- PRANK -->
+  <div class="page" id="prank">
+    <div class="section-title">Безобидные шутки</div>
+    <button class="action warn" style="margin-bottom:10px;" onclick="send('/prank')">
+      <span class="icon">🎭</span><span class="label">Prank — случайный хаос</span>
+    </button>
+    <button class="action warn" style="margin-bottom:10px;" onclick="send('/ghost')">
+      <span class="icon">👻</span><span class="label">Ghost — режим призрака</span>
+    </button>
+    <button class="action warn" onclick="send('/insane')">
+      <span class="icon">🤪</span><span class="label">Insane — режим безумия</span>
+    </button>
+
+    <div class="section-title">Голосовые приколы</div>
+    <div class="grid g2">
+      <button class="action" onclick="send('/say Я твой телефон. Я живой.')"><span class="icon">🤖</span><span class="label">Я живой</span></button>
+      <button class="action" onclick="send('/say Ха-ха-ха-ха!')"><span class="icon">😈</span><span class="label">Смех</span></button>
+      <button class="action" onclick="send('/say Беги, пока можешь.')"><span class="icon">🏃</span><span class="label">Беги</span></button>
+      <button class="action" onclick="send('/say Помогите, меня похитили!')"><span class="icon">😱</span><span class="label">SOS</span></button>
+    </div>
+  </div>
+
 </div>
 
-<h2>🎭 Пранк</h2>
-<div class="grid3">
-  <button class="warn" onclick="send('/prank')"><span class="icon">🎭</span>Prank</button>
-  <button class="warn" onclick="send('/ghost')"><span class="icon">👻</span>Ghost</button>
-  <button class="warn" onclick="send('/insane')"><span class="icon">🤪</span>Insane</button>
-</div>
-
-<h2>💬 Своя команда</h2>
-<input id="custom" placeholder="/say Привет" />
-<button class="success" onclick="sendCustom()"><span class="icon">📤</span>Отправить</button>
+<div class="toast" id="toast"></div>
 
 <script>
   const tg = window.Telegram.WebApp;
   tg.ready();
   tg.expand();
 
+  // Хранить последнюю команду для защиты от повторных кликов
+  let lastSent = 0;
+
+  function switchTab(name, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById(name).classList.add('active');
+    if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+  }
+
+  function showToast(text) {
+    const t = document.getElementById('toast');
+    t.textContent = text;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1500);
+  }
+
   function send(command) {
+    // Антиспам: не чаще 1 раза в 400мс
+    const now = Date.now();
+    if (now - lastSent < 400) return;
+    lastSent = now;
+
+    if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+    showToast('→ ' + command);
     tg.sendData(command);
-    if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-    tg.close();
+  }
+
+  function confirmSend(command, text) {
+    if (confirm(text)) send(command);
   }
 
   function sendCustom() {
-    const val = document.getElementById('custom').value.trim();
-    if (val) send(val);
+    const val = document.getElementById('customCmd').value.trim();
+    if (!val) return;
+    send(val);
+    document.getElementById('customCmd').value = '';
   }
 
-  function askVolume() {
-    const val = prompt('Громкость (0-100):', '50');
-    if (val !== null && !isNaN(val)) send('/volume ' + val);
-  }
+  // Enter в полях = отправить
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const id = e.target.id;
+      if (id === 'customCmd') sendCustom();
+      else if (id === 'toastText') send('/toast ' + e.target.value);
+      else if (id === 'notifyText') send('/notify ' + e.target.value);
+    }
+  });
 </script>
 
 </body>
-</html>
+                                                      </html>
